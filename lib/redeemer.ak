@@ -1,24 +1,11 @@
 use cardano/address.{Address}
-use cardano/transaction.{OutputReference}
+use cardano/transaction.{Output, OutputReference}
 
 pub type Redeemer {
   Send {
     signature: ByteArray,
     utxos: List<OutputReference>,
-    policy: ByteArray,
-    assetname: ByteArray,
-    amount: Int,
-    policyInput: ByteArray,
-    assetnameInput: ByteArray,
-    amountInput: Int,
-    spendingscriptflag: Int,
-    pubkey: ByteArray,
-    stakingscriptflag: Int,
-    stakekey: ByteArray,
-    datumflag: Int,
-    datum: Data,
-    payment_index: Int,
-    fee: Int,
+    outputs: List<Output>,
     signer: Address,
   }
   Merge

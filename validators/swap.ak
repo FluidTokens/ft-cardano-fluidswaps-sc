@@ -1,5 +1,4 @@
 use aiken/builtin
-use aiken/cbor
 use aiken/collection/list
 use aiken/crypto.{keccak_256, sha2_256}
 use aiken/interval.{Finite}
@@ -44,7 +43,7 @@ validator swap(
         True
       }
       Cancel -> {
-        expect validate_tx_end(self, deadline) == True
+        expect validate_swap_expired(self, deadline) == True
         list.has(self.extra_signatories, owner_ada_pubkey_hash)
       }
     }
@@ -55,10 +54,10 @@ validator swap(
   }
 }
 
-fn validate_tx_end(tx: Transaction, deadline: Int) {
-  trace cbor.diagnostic(deadline)
-  when tx.validity_range.upper_bound.bound_type is {
-    Finite(end) -> end < deadline
+fn validate_swap_expired(tx: Transaction, deadline: Int) {
+  //trace cbor.diagnostic(deadline)
+  when tx.validity_range.lower_bound.bound_type is {
+    Finite(end) -> end > deadline
     _ -> False
   }
 }

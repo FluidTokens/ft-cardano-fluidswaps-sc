@@ -1,6 +1,6 @@
 use aiken/builtin
 use aiken/cbor
-use aiken/collection/list
+use aiken/collection/list.{has}
 use aiken/collection/pairs
 use aiken/crypto.{keccak_256, sha2_256}
 use aiken/interval.{Finite}
@@ -12,7 +12,7 @@ use cardano/address.{
   Address, Credential, Script, from_script, from_verification_key,
   with_delegation_key, with_delegation_script,
 }
-use cardano/assets.{from_asset, from_lovelace, merge, negate, quantity_of, zero}
+use cardano/assets.{from_lovelace}
 use cardano/certificate.{
   Certificate, DelegateBlockProduction, DelegateCredential,
 }
@@ -33,76 +33,15 @@ validator global(pubKey: ByteArray) {
     //we'll build the message like this,txid+index+unit+amount+pubkey+stakekeys
 
     when redeemer is {
-      Send(
-        signature,
-        utxos,
-        policy,
-        assetname,
-        amount,
-        policyInput,
-        assetnameInput,
-        amountInput,
-        spendingscriptflag,
-        pubkey,
-        stakingscriptflag,
-        stakekey,
-        datumflag,
-        datum,
-        payment_index,
-        fee,
-        signer,
-      ) -> {
-        let list_utxos =
-          list.foldr(
-            utxos,
-            [],
-            fn(utxo, xs) {
-              [
-                utxo.transaction_id,
-                bytearray.from_int_big_endian(utxo.output_index, 1),
-                ..xs
-              ]
-            },
-          )
-        expect datum_converted: ByteArray = datum
+      Send(signature, utxos, outputs, signer) -> {
         let message_array: List<ByteArray> =
-          list.push([], bytearray.from_int_big_endian(fee, 20))
-            |> list.push(bytearray.from_int_big_endian(payment_index, 1))
-            |> list.push(datum_converted)
-            |> list.push(bytearray.from_int_big_endian(datumflag, 1))
-            |> list.push(stakekey)
-            |> list.push(bytearray.from_int_big_endian(stakingscriptflag, 1))
-            |> list.push(pubkey)
-            |> list.push(bytearray.from_int_big_endian(spendingscriptflag, 1))
-            |> list.push(bytearray.from_int_big_endian(amountInput, 20))
-            |> list.push(assetnameInput)
-            |> list.push(policyInput)
-            |> list.push(bytearray.from_int_big_endian(amount, 20))
-            |> list.push(assetname)
-            |> list.push(policy)
+          list.push([], cbor.serialise(utxos))
+            |> list.push(cbor.serialise(outputs))
 
-        let concat_array = concat_array(list.concat(list_utxos, message_array))
-        let message_hash_btc = get_hash_from_bytearray_btc(concat_array)
-        let message_hash_eth = get_hash_from_bytearray_eth(concat_array)
-        //TODO da checkare
-        //verify I am sending the right amount to the right user from the data i have in the first output
-        //verify the second output goes to the starting one - the amount it had - 1 ADA
-        //address validation receiver is missing
-        let sending_value = from_asset(policy, assetname, amount)
-        let incoming_value =
-          if amountInput > 0 {
-            from_asset(policy, assetname, amount)
-          } else {
-            zero
-          }
-
-        expect Some(contract_input) = find_input(self.inputs, own_ref)
-        expect Some(payment_output) = list.at(self.outputs, payment_index)
-
-        let starting_value =
-          find_inputs_value(self.inputs, contract_input.output.address)
-        let final_value =
-          find_outputs_value(self.outputs, contract_input.output.address)
+        let message_hash_btc =
+          get_hash_from_bytearray_btc(cbor.serialise(message_array))
+        let message_hash_eth =
+          get_hash_from_bytearray_eth(cbor.serialise(message_array))
 
         let flag_utxo_present = list.has(utxos, own_ref)
 
@@ -121,35 +60,10 @@ validator global(pubKey: ByteArray) {
         //Check 6) Inputs that were not willing to be inside are from the same address and is a user
         //7)Issue now is the expected value coming, this is something we want to sign also? Add input value signed and we are done
         //Let's limit the max amount of outputs to the same wallet, otherwise someone could split all my ada in so many utxos making hard to spend them
-        let expected_datum = calculate_datum(datumflag, datum)
-        let expected_address =
-          calculate_address(
-            spendingscriptflag,
-            stakingscriptflag,
-            pubkey,
-            stakekey,
-          )
         and {
-          quantity_of(payment_output.value, policy, assetname) == quantity_of(
-            sending_value,
-            policy,
-            assetname,
-          ),
-          assets.match(
-            final_value,
-            merge(
-              merge(
-                merge(starting_value, negate(sending_value)),
-                incoming_value,
-              ),
-              negate(from_lovelace(fee)),
-            ),
-            >=,
-          ),
           basic_validation,
-          payment_output.address == expected_address,
-          payment_output.datum == expected_datum,
           all_inputs_present(utxos, self.inputs),
+          all_outputs_present(outputs, self.outputs),
           only_external_signer_inputs_extra(utxos, self.inputs, signer),
         }
       }
@@ -265,34 +179,6 @@ fn validate_tx_end(tx: Transaction, deadline: Int) {
   }
 }
 
-fn find_inputs_value(inputs: List<Input>, sc_address: Address) {
-  list.foldl(
-    inputs,
-    zero,
-    fn(input, total) {
-      if input.output.address == sc_address {
-        merge(input.output.value, total)
-      } else {
-        total
-      }
-    },
-  )
-}
-
-fn find_outputs_value(outputs: List<Output>, sc_address: Address) {
-  list.foldl(
-    outputs,
-    zero,
-    fn(output, total) {
-      if output.address == sc_address {
-        merge(output.value, total)
-      } else {
-        total
-      }
-    },
-  )
-}
-
 pub fn calculate_address(
   flag_spending_script: Int,
   flag_staking_script: Int,
@@ -331,6 +217,13 @@ pub fn all_inputs_present(
   real_utxos: List<Input>,
 ) {
   list.all(utxos_chosen, fn(input) { is_some(find_input(real_utxos, input)) })
+}
+
+pub fn all_outputs_present(
+  outputs_chosen: List<Output>,
+  real_outputs: List<Output>,
+) {
+  list.all(outputs_chosen, fn(output) { has(real_outputs, output) })
 }
 
 pub fn only_external_signer_inputs_extra(

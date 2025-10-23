@@ -10,6 +10,7 @@ validator my_first_validator {
 }
 ```
 
+
 ## Building
 
 ```sh
