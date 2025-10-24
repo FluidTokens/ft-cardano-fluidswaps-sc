@@ -1,8 +1,8 @@
 use aiken/builtin
 use aiken/cbor
-use aiken/collection/list.{has}
+use aiken/collection/list
 use aiken/collection/pairs
-use aiken/crypto.{keccak_256, sha2_256}
+use aiken/crypto.{blake2b_256, keccak_256, sha2_256}
 use aiken/interval.{Finite}
 use aiken/option.{is_some}
 use aiken/primitive/bytearray.{length}
@@ -21,7 +21,7 @@ use cardano/transaction.{
   find_input,
 }
 use constants
-use redeemer.{Merge, Redeemer, Send, Stake}
+use redeemer.{Redeemer, Send, Stake}
 
 validator global(pubKey: ByteArray) {
   spend(
@@ -33,10 +33,10 @@ validator global(pubKey: ByteArray) {
     //we'll build the message like this,txid+index+unit+amount+pubkey+stakekeys
 
     when redeemer is {
-      Send(signature, utxos, outputs, signer) -> {
+      Send(signature, utxos, chosen_outputs_hash, chosen_outputs_length, signer) -> {
         let message_array: List<ByteArray> =
           list.push([], cbor.serialise(utxos))
-            |> list.push(cbor.serialise(outputs))
+            |> list.push(cbor.serialise(chosen_outputs_hash))
 
         let message_hash_btc =
           get_hash_from_bytearray_btc(cbor.serialise(message_array))
@@ -63,12 +63,15 @@ validator global(pubKey: ByteArray) {
         and {
           basic_validation,
           all_inputs_present(utxos, self.inputs),
-          all_outputs_present(outputs, self.outputs),
+          all_outputs_present(
+            chosen_outputs_hash,
+            chosen_outputs_length,
+            self.outputs,
+          ),
           only_external_signer_inputs_extra(utxos, self.inputs, signer),
         }
       }
       //idealmente qua calcolo il valore totale in input e mi assicuro al contratto vada esattamente quell'ammontare - 2 ADA
-      Merge -> False
       _ -> False
     }
   }
@@ -161,9 +164,6 @@ fn get_hash_from_bytearray_eth(byte: ByteArray) {
 }
 
 fn validate_signature_key(publicKey: ByteArray, msg: ByteArray, sig: ByteArray) {
-  trace cbor.diagnostic(
-    builtin.verify_ecdsa_secp256k1_signature(publicKey, msg, sig),
-  )
   builtin.verify_ecdsa_secp256k1_signature(publicKey, msg, sig)
 }
 
@@ -220,10 +220,11 @@ pub fn all_inputs_present(
 }
 
 pub fn all_outputs_present(
-  outputs_chosen: List<Output>,
+  outputs_chosen_hash: ByteArray,
+  length: Int,
   real_outputs: List<Output>,
 ) {
-  list.all(outputs_chosen, fn(output) { has(real_outputs, output) })
+  hash(cbor.serialise(list.slice(real_outputs, 0, length))) == outputs_chosen_hash
 }
 
 pub fn only_external_signer_inputs_extra(
@@ -237,4 +238,8 @@ pub fn only_external_signer_inputs_extra(
       fn(input) { !list.has(utxos_chosen, input.output_reference) },
     )
   list.all(list_external, fn(input) { input.output.address == address_signer })
+}
+
+pub fn hash(data: Data) {
+  blake2b_256(cbor.serialise(data))
 }

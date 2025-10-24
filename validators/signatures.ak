@@ -1,5 +1,4 @@
 use aiken/builtin
-use aiken/cbor
 use aiken/collection/list
 use aiken/crypto.{keccak_256, sha2_256}
 use aiken/primitive/bytearray.{length}
@@ -232,3 +231,4 @@ fn generate_redeemer_string_real(redeemer: RedeemerReal) -> String {
 test sending_assets_validation() {
   generate_redeemer_string_real(test_redeemer_real) == @"F10D57058072065AB13AF839A31E97C18EC7094C5A5E33E9A99110FB1AE92B54"
 }
+//TODO, do tests with new hashing functions
