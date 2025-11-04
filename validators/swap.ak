@@ -57,7 +57,7 @@ validator swap(
 fn validate_swap_expired(tx: Transaction, deadline: Int) {
   //trace cbor.diagnostic(deadline)
   when tx.validity_range.lower_bound.bound_type is {
-    Finite(end) -> end > deadline
+    Finite(begin) -> begin > deadline
     _ -> False
   }
 }
