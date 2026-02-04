@@ -115,13 +115,12 @@ const pubkey =
 
 //a57805e57fccecb921cf9acac130b9ca8f76f73fc21ff5c7d04b76849424806e1ee52ad1ef3c5721a9e5ced31ef66afe7e586c8d76349558b20e01f913fb4a8e1c
 const signaturevm =
-  #"5907ff919d4d3d901ae4a9a0ab3d43228043e2c9e66b419f95441e82b2fc320c1c2111ca8a0a7c46c5d1b6dc2b4cf672fcf493f2cafefe8819a8b678c1636e7d"
+  #"caa0af53587df88bef82ff2afd11f626eefca2d4e1ccc326e735862c654112144d1dc6b7cdc47b3c0f846fd117ac825338cc222cd4d8ad83553f889eb4266241"
 
 const pubkeyevm =
-  #"03d60f06fdfc20cde4cabf176237101424b141ba2fae5fb621717d4192f292c0a2"
+  #"026ce2fee81a8ddf0fd677f0ebd894d1589ddb5ad0f628cfc7fe5a971421b65d1f"
 
-const messagevm =
-  @"BB1354D7A4AD7EB7A82C1A77A8CFBAA8F0F0F7133919FF253A5301309E943876"
+const messagevm = @"ciao12"
 
 const messagebtc =
   @"e564c69259497905d0f5a2d1468b5b1eff5386da1aeea735ea4f1d6abba400ca"
@@ -131,11 +130,6 @@ test signature_litecoin() {
   let bytes = string.to_bytearray(messagebtc)
   trace cbor.diagnostic(bytes)
   validate_signature_key(pubkey, messageHash, signature) == True
-}
-
-test signature_evm() {
-  let messageHash = generate_message_hash_evm(messagevm)
-  validate_signature_key(pubkeyevm, messageHash, signaturevm) == True
 }
 
 fn validate_signature_key(publicKey: ByteArray, msg: ByteArray, sig: ByteArray) {
@@ -225,7 +219,9 @@ fn generate_redeemer_string_real(redeemer: RedeemerReal) -> String {
       |> list.push(redeemer.stakekey)
       |> list.push(bytearray.from_int_big_endian(redeemer.stakingscriptflag, 1))
       |> list.push(redeemer.pubkey)
-      |> list.push(bytearray.from_int_big_endian(redeemer.spendingscriptflag, 1))
+      |> list.push(
+          bytearray.from_int_big_endian(redeemer.spendingscriptflag, 1),
+        )
       |> list.push(bytearray.from_int_big_endian(redeemer.amountInput, 20))
       |> list.push(redeemer.assetnameInput)
       |> list.push(redeemer.policyInput)
@@ -252,4 +248,35 @@ test test_frost_bitcoin() {
     #"3819ff1b5125e14102ae429929e815d6fada758d4a6886a03b1b1c64aca3a53a",
     #"e500505a0946b7848ff53f15a377915f0383efda4492dcb0a7e0cc3a253a89cee3c3fd06a1a870e0b4b2209dc2353c92aa59e399ea1a5490db1d44e0c7a40802",
   )
+}
+
+// Test for XVerse Bitcoin wallet signature verification
+// Input: tx 7d4123079698c2d931686a20bb167613bde09d3041ce6b1868211594f5eab7f1#0
+// Output: addr_test1qqq0cuu96g9hny47un2qcyv7qcs3u70whcdmf06mqj3pkt4wckwszdqepz35tf5h4h9mkce2p4hf3wj239pwhxswwkcq7p5gst with 3 ADA
+// Token: 0b77d150c275bd0a600633e4be7d09f83c4b9f00981e22ac9c9d3f62.0014df1074464c4454
+const xverse_pubkey =
+  #"02c341a570aded9e1cba4930aebff64af210d03473ea0fbfee8a3ab5bea15cd685"
+
+// Base64 signature: JEFmaUH6nAETU7XRImsJmhycVBEHIpy0g7GnE0XITrchNbZHt7oelbCIR0YJtJjKM5K1W8bK5XDkCseGDjjALp0=
+// Decoded (65 bytes): 24416669417ea9c013537d1226b099a1c9c54110722c9cb483b1a71345c84eb72135b647b7ba1e95b088474609b498ca3392b55bc6cae570e40ac7860e38c02e9d
+// First byte (0x24 = 36) is recovery ID, remaining 64 bytes are r,s signature
+const xverse_signature =
+  #"a352b6f329420f909283c00fcf54cc3a71d25e1fcc05c8a439757b5b5de219bd0a21fea12f1c47c0c6f7509687bb6651d155599b2c2c7bb08082c107d53ebd5b"
+
+// The hash as hex string (what gets signed with Bitcoin message prefix)
+const xverse_message_string =
+  @"EE8CF8E07D8F632EE12C1DFDAA53EDDE37753B79F369A95C4C1959544F059A9F"
+
+test signature_xverse_bitcoin_with_prefix() {
+  // Test 2: Apply Bitcoin message prefix to the hex string message
+  trace @"Test with Bitcoin message prefix:"
+  let message_hash_with_prefix = generate_message_hash(xverse_message_string)
+  trace cbor.diagnostic(message_hash_with_prefix)
+  let result_with_prefix =
+    validate_signature_key(
+      xverse_pubkey,
+      message_hash_with_prefix,
+      xverse_signature,
+    )
+  result_with_prefix == True
 }

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aiken check:*)",
+      "Bash(npm install)",
+      "Bash(npm run spend:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(npx tsc:*)",
+      "Bash(dir \"c:\\\\Users\\\\raulr\\\\Documents\\\\GitHub\\\\ft-cardano-fluidswaps-sc\\\\scripts\\\\dist\")",
+      "Bash(npm install:*)",
+      "Bash(aiken build:*)",
+      "Bash(git checkout:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}

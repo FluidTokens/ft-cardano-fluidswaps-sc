@@ -33,7 +33,14 @@ validator global(pubKey: ByteArray) {
     //we'll build the message like this,txid+index+unit+amount+pubkey+stakekeys
 
     when redeemer is {
-      Send(signature, utxos, chosen_outputs_hash, chosen_outputs_length, signer) -> {
+      Send {
+        signature,
+        utxos,
+        chosen_outputs_hash,
+        chosen_outputs_start,
+        chosen_outputs_length,
+        signer,
+      } -> {
         let message_array: List<ByteArray> =
           list.push([], cbor.serialise(utxos))
             |> list.push(cbor.serialise(chosen_outputs_hash))
@@ -65,6 +72,7 @@ validator global(pubKey: ByteArray) {
           all_inputs_present(utxos, self.inputs),
           all_outputs_present(
             chosen_outputs_hash,
+            chosen_outputs_start,
             chosen_outputs_length,
             self.outputs,
           ),
@@ -96,10 +104,11 @@ validator global(pubKey: ByteArray) {
   }
 
   publish(redeemer: Redeemer, certificate: Certificate, self: Transaction) {
-    expect Stake(signature, deadline) = redeemer
+    expect Stake { signature, deadline } = redeemer
     when certificate is {
-      DelegateCredential(_, delegateCredential) -> {
-        expect DelegateBlockProduction(poolId) = delegateCredential
+      DelegateCredential { delegate: delegateCredential, .. } -> {
+        expect DelegateBlockProduction { stake_pool: poolId } =
+          delegateCredential
         let message_array: List<ByteArray> =
           list.push([], poolId)
             |> list.push(bytearray.from_int_big_endian(deadline, 20))
@@ -221,10 +230,11 @@ pub fn all_inputs_present(
 
 pub fn all_outputs_present(
   outputs_chosen_hash: ByteArray,
+  start: Int,
   length: Int,
   real_outputs: List<Output>,
 ) {
-  hash(cbor.serialise(list.slice(real_outputs, 0, length))) == outputs_chosen_hash
+  hash(cbor.serialise(list.slice(real_outputs, start, length))) == outputs_chosen_hash
 }
 
 pub fn only_external_signer_inputs_extra(

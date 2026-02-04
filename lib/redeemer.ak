@@ -6,6 +6,7 @@ pub type Redeemer {
     signature: ByteArray,
     utxos: List<OutputReference>,
     chosen_outputs_hash: ByteArray,
+    chosen_outputs_start: Int,
     chosen_outputs_length: Int,
     signer: Address,
   }
