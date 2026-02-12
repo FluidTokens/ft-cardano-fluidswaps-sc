@@ -240,14 +240,14 @@ pub fn all_outputs_present(
 pub fn only_external_signer_inputs_extra(
   utxos_chosen: List<OutputReference>,
   real_utxos: List<Input>,
-  address_signer: Address,
+  _address_signer: Address,
 ) {
   let list_external =
     list.filter(
       real_utxos,
       fn(input) { !list.has(utxos_chosen, input.output_reference) },
     )
-  list.all(list_external, fn(input) { input.output.address == address_signer })
+  list.all(list_external, fn(input) { input.output.datum == NoDatum })
 }
 
 pub fn hash(data: Data) {

@@ -50,18 +50,18 @@ const test_pubkey =
 
 // Signature from spend-global.ts (64 bytes r||s)
 const test_signature =
-  #"2b00b7ec40be17666c2f72b1bf45ff9554c9de6c996df581e863ba0fec06cfd46baf6e47ac6f9d39a067149b12cd1e19121ab03eb9bc88981d86319a2608fe25"
+  #"29d02c9f38c096197263ad0b865c329d076b8949ff634e9f8f9aacfbb50b956971337375a15ce3bfba3efca8eea8c27e70f35642e6c749191b9e28146b720916"
 
 // UTxO to spend: a0ac0f4d492b4efcdb9e410f409e32708b21d11cb7edc4f7d1405d730f3a738d#0
 const test_utxo =
   OutputReference(
-    #"e3e3de07830b1d466c3fd3fde53e8aa848bb50c4a8dea3676f433bf3872d80a0",
+    #"d9c9f2cd1afc1201696af4a2ae1a3c581d9ca9172cf63b25ebef329743435750",
     0,
   )
 
 // Outputs hash from spend-global.ts
 const test_outputs_hash =
-  #"2e0db12bc580d94fefdd6ac1d29221752e0e0f3d27e4ada4bdf12d58815e24dd"
+  #"25cbad9d3d490bd31b835984beb4c3cef67618a05d05851742df2aa81ee5cc37"
 
 // OLD version per confronto
 fn get_hash_from_bytearray_btc_OLD(byte: ByteArray) -> ByteArray {
@@ -166,19 +166,19 @@ test test_outputs() {
   let output2 =
     Output(
       calculate_address(
-        0,
-        0,
-        #"619b1b290a86129ddcbda3397fed176b1b6d47c12a75a3e0e0bdfea7",
-        #"e1a1fcec14f1970043b0b31022133a6a0b3b33be8b81bf1eb33e0eea",
+        1,
+        1,
+        #"48e0848a0b401e4255fae381091ec9f6a68424de5c17ea2451de2c3d",
+        #"48e0848a0b401e4255fae381091ec9f6a68424de5c17ea2451de2c3d",
       ),
-      from_lovelace(399826447),
+      from_lovelace(96000000),
       NoDatum,
       None,
     )
 
   // Show the hash that this output produces
   let outputs = [output, output2]
-  let serialized = cbor.serialise(list.slice(outputs, 0, 0))
+  let serialized = cbor.serialise(list.slice(outputs, 0, 1))
   trace cbor.diagnostic(serialized)
   let calculated_hash = hash(serialized)
 
@@ -187,7 +187,7 @@ test test_outputs() {
   trace @"Expected outputs hash:"
   trace cbor.diagnostic(test_outputs_hash)
 
-  let flag_outputs = all_outputs_present(test_outputs_hash, 0, outputs)
+  let flag_outputs = all_outputs_present(test_outputs_hash, 1, outputs)
 
   trace @"All outputs present (should be true):"
   trace cbor.diagnostic(flag_outputs)
