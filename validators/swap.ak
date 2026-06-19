@@ -100,16 +100,16 @@ fn validate_signature_key(publicKey: ByteArray, msg: ByteArray, sig: ByteArray) 
   builtin.verify_ecdsa_secp256k1_signature(publicKey, msg, sig)
 }
 
-const preimage = #"6369616f"
+const preimage = #"313233343536373839"
 
 const signature =
-  #"364b27cff194e1f460eca9eff4f60d385da1f667955615f6cd16b43a14185aed3c99a6929244da81c9d37b1d7886c43d2d974ea894d30a3444022bf3b2e0a60f"
+  #"f290c3e41dc18886238c87e84b0e0aa6785c7d79d41b636a38cb2d480635565a0fb8b609e613d1c12fda4c0634ad6a90ec432dfb647fa1b6813f969eb2e2d4c4"
 
 const hashed_password =
-  #"b133a0c0e9bee3be20163d2ad31d6248db292aa6dcb1ee087a2aa50e0fc75ae2"
+  #"15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225"
 
 const external_user_chain_pubkey =
-  #"03a84b5bdfb6b4e85fc1bfa2fa8fce292acc0119fd186132aba570b07564f28b5a"
+  #"03b965b721e56c9cb4148fd25476484c43a94efbba97a8ab70df37b6f6ac7f5be2"
 
 test validation() {
   let message_hash_btc = get_hash_from_bytearray_btc(preimage)

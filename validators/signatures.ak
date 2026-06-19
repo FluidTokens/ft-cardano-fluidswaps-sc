@@ -108,10 +108,10 @@ fn generate_message_hash_evm(message: String) -> ByteArray {
 }
 
 const signature =
-  #"34f8d9084aa42e040a2c05177cd368c14ca14e6c2623193d322e5c1dfed7b4e841736d5c22f0a80e5b44f664c3c10672fb0ce2f9f9d8799cfc924f36826ceded"
+  #"47304402205d63e25dc4e6b9349d0a4ee35d88c4c485c993d34d15e1abaae7c3fd732ad87d022026527b9daaaabe437f17316f4cb07751f002e00828a8f262ed66cc1389e02c4301210260d547a3fed36883b6f683efb3c10a1049adfa84b5411086fd321d218896aa88"
 
 const pubkey =
-  #"03a84b5bdfb6b4e85fc1bfa2fa8fce292acc0119fd186132aba570b07564f28b5a"
+  #"0260d547a3fed36883b6f683efb3c10a1049adfa84b5411086fd321d218896aa88"
 
 //a57805e57fccecb921cf9acac130b9ca8f76f73fc21ff5c7d04b76849424806e1ee52ad1ef3c5721a9e5ced31ef66afe7e586c8d76349558b20e01f913fb4a8e1c
 const signaturevm =
@@ -122,8 +122,7 @@ const pubkeyevm =
 
 const messagevm = @"ciao12"
 
-const messagebtc =
-  @"e564c69259497905d0f5a2d1468b5b1eff5386da1aeea735ea4f1d6abba400ca"
+const messagebtc = @"lorenzotest"
 
 test signature_litecoin() {
   let messageHash = generate_message_hash(messagebtc)
